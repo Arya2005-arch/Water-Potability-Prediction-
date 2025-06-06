@@ -7,7 +7,7 @@ from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score
 
 def load_data():
-    return pd.read_csv("C:/Users/ASUS/Desktop/ml/water_potability.csv")
+    return pd.read_csv("water_potability.csv")
 
 def preprocess_data(df):
     X = df.drop("Potability", axis=1)
