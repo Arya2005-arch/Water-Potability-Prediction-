@@ -17,9 +17,7 @@ st.subheader("📊 Model Accuracy Comparison (Auto-trained)")
 (X_train, X_test, y_train, y_test), imputer = preprocess_data(data)
 results, model = train_and_evaluate_models(X_train, X_test, y_train, y_test)
 
-# Show accuracy table
-st.write("### Accuracy of Different Models:")
-st.table(pd.DataFrame(results.items(), columns=["Model", "Accuracy (%)"]))
+
 
 # Live prediction
 st.subheader("🔍 Predict Potability of Your Sample")
