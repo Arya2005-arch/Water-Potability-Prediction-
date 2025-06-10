@@ -2,60 +2,87 @@ import streamlit as st
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+import joblib
+from model import load_data, preprocess_data, train_and_evaluate_models, predict_potability
 
-# App config
-st.set_page_config(page_title="Water Potability Dashboard", layout="wide")
+# Load data and preprocess
+data = load_data()
+(X_train, X_test, y_train, y_test), imputer = preprocess_data(data)
+results = train_and_evaluate_models(X_train, X_test, y_train, y_test, imputer)
+
+# Save success message
+st.success("✅ Model and imputer have been saved as .pkl files.")
+
+# Load model and imputer
+model = joblib.load("random_forest_model.pkl")
+imputer = joblib.load("imputer.pkl")
 
 # Sidebar navigation
 st.sidebar.title("Navigation")
 page = st.sidebar.radio("Go to", ["Home", "Dataset", "Summary", "Graphs", "Predict"])
 
-# Home Page
+# Page: Home
 if page == "Home":
     st.title("💧 Water Potability Prediction App")
     st.markdown("""
-        Welcome to the **Water Potability Prediction App** built with **Streamlit** and **Machine Learning**.
-        \nUse the sidebar to explore the dataset, view visualizations, or make predictions.
+        Welcome to the Water Potability Predictor!  
+        Use the sidebar to explore the dataset, view statistics, graphs, and make predictions.
     """)
 
-# Dataset Page
+# Page: Dataset
 elif page == "Dataset":
-    st.title("📊 Dataset Overview")
-    df = pd.read_csv("water_potability.csv")  # Replace with your dataset path
-    st.dataframe(df)
+    st.title("📄 Dataset Preview")
+    st.dataframe(data.head())
 
-# Summary Page
+# Page: Summary
 elif page == "Summary":
-    st.title("📌 Statistical Summary")
-    df = pd.read_csv("water_potability.csv")
-    st.write(df.describe())
+    st.title("📊 Data Summary")
+    st.write(data.describe())
 
-# Graphs Page
+    st.subheader("📈 Accuracy of Different Models")
+    st.table(pd.DataFrame(results.items(), columns=["Model", "Accuracy (%)"]))
+
+# Page: Graphs
 elif page == "Graphs":
-    st.title("📈 Data Visualization")
-    df = pd.read_csv("water_potability.csv")
-
-    st.subheader("Pairplot of Features")
-    st.markdown("This shows relationships between variables based on potability.")
-    fig = sns.pairplot(df.dropna(), hue='Potability')
-    st.pyplot(fig)
+    st.title("📊 Data Visualization")
 
     st.subheader("Correlation Heatmap")
     plt.figure(figsize=(10, 6))
-    sns.heatmap(df.corr(), annot=True, cmap="coolwarm")
+    sns.heatmap(data.corr(), annot=True, cmap="coolwarm")
     st.pyplot(plt)
 
-# Prediction Page
+    st.subheader("Pairplot (this may take a moment)")
+    sns.pairplot(data.dropna(), hue='Potability', palette='Set2')
+    st.pyplot()
+
+# Page: Predict
 elif page == "Predict":
-    st.title("🔍 Water Potability Predictor")
+    st.title("🔍 Predict Water Potability")
 
-    # Add sliders or input fields here
-    ph = st.slider("pH Level", 0.0, 14.0, 7.0)
-    hardness = st.slider("Hardness", 50, 500, 200)
-    solids = st.slider("Solids", 500, 50000, 10000)
-    conductivity = st.slider("Conductivity", 100, 1000, 400)
-    # ... add more features as needed
+    with st.form("prediction_form"):
+        ph = st.number_input("pH value", min_value=0.0, max_value=14.0, value=7.0)
+        hardness = st.number_input("Hardness", value=200.0)
+        solids = st.number_input("Solids", value=15000.0)
+        chloramines = st.number_input("Chloramines", value=7.0)
+        sulfate = st.number_input("Sulfate", value=300.0)
+        conductivity = st.number_input("Conductivity", value=400.0)
+        organic_carbon = st.number_input("Organic Carbon", value=10.0)
+        trihalomethanes = st.number_input("Trihalomethanes", value=60.0)
+        turbidity = st.number_input("Turbidity", value=4.0)
 
-    if st.button("Predict"):
-        # Example prediction logic (replace with model)
-        st.success("Prediction logic goes here")
+        submitted = st.form_submit_button("Predict")
+
+        if submitted:
+            features = {
+                "ph": ph,
+                "Hardness": hardness,
+                "Solids": solids,
+                "Chloramines": chloramines,
+                "Sulfate": sulfate,
+                "Conductivity": conductivity,
+                "Organic_carbon": organic_carbon,
+                "Trihalomethanes": trihalomethanes,
+                "Turbidity": turbidity
+            }
+            result = predict_potability(model, features, imputer)
+            st.success(f"Prediction: {'Potable 💧' if result == 1 else 'Not Potable ⚠️'}")
