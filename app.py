@@ -12,10 +12,6 @@ st.dataframe(data.head())
 if st.checkbox("Show data summary"):
     st.write(data.describe())
 
-# Automatically train model on app startup
-st.subheader("📊 Model Accuracy Comparison (Auto-trained)")
-(X_train, X_test, y_train, y_test), imputer = preprocess_data(data)
-results, model = train_and_evaluate_models(X_train, X_test, y_train, y_test)
 
 
 
